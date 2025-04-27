@@ -2,7 +2,8 @@
 const models = require('../models');
 
 // get the Cat model
-const { Cat, Dog } = models;
+const { Cat} = models;
+const {Dog} = models;
 
 // Function to handle rendering the index page.
 const hostIndex = async (req, res) => {
@@ -100,8 +101,15 @@ const hostPage3 = (req, res) => {
   res.render('page3');
 };
 
-const hostPage4 = (req, res) => {
-  res.render('page4');
+const hostPage4 = async(req, res) => {
+  
+  try {
+    const docs = await Dog.find({}).lean().exec();
+    return res.render('page4', { dogs: docs });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ error: 'failed to find dogs' });
+  }
 }
 
 // Get name will return the name of the last added cat.
@@ -280,19 +288,8 @@ const updateLast = (req, res) => {
   });
 };
 
-//Get all dogs
-const getDog = async (req, res) => {
-  try {
-    const docs = await Dog.find({}).lean().exec();
-    return res.json({ dogs: docs });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ error: 'Failed to get dogs' });
-  }
-};
-
 //Create a new dog
-const setDog = async (req, res) => {
+const createDog = async (req, res) => {
   if (!req.body.name || !req.body.breed || !req.body.age) {
     return res.status(400).json({ error: 'Name, breed, and age are all required' });
   }
@@ -329,12 +326,22 @@ const searchDog = async (req, res) => {
     doc = await Dog.findOne({ name: req.query.name }).exec();
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ error: 'Something went wrong searching for dog' });
+    return res.status(500).json({ error: 'Something went wrong' });
   }
 
   if (!doc) {
     return res.status(404).json({ error: 'No dog found' });
   }
+
+  //Age increase
+  // doc.age += 1;
+  
+  // try {
+  //   await doc.save();
+  // } catch (err) {
+  //   console.log(err);
+  //   return res.status(500).json({ error: 'Failed to update dog age' });
+  // }
 
   return res.json({ name: doc.name, breed: doc.breed, age: doc.age });
 };
@@ -358,7 +365,6 @@ module.exports = {
   updateLast,
   searchName,
   notFound,
-  getDog,
-  setDog,
+  createDog,
   searchDog,
 };
